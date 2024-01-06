@@ -28,6 +28,7 @@ const echoRelayEndpoint = new URL(
 const getEndpoint = (pathname: string): URL =>
   new URL(pathname, echoRelayEndpoint);
 const echoRelayApiKey = Deno.env.get("ECHO_RELAY_API_KEY") || "";
+const rateLimit = Number(Deno.env.get("RATE_LIMIT") || "1000");
 
 enum UnlockStatus {
   Locked = "locked",
@@ -35,7 +36,6 @@ enum UnlockStatus {
   Unlocked = "unlocked",
 }
 
-const rateLimit = 1000; // one request per second
 const rateLimits = new Map<string, number>();
 
 Deno.serve(async (request, info) => {

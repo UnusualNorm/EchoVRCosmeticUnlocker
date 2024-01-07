@@ -1,5 +1,5 @@
 import "https://deno.land/std@0.201.0/dotenv/load.ts";
-import items from "./items.json" assert { type: "json" };
+import itemsToUnlock from "./items.json" assert { type: "json" };
 
 // TODO: add more
 const platforms = [
@@ -98,17 +98,22 @@ Deno.serve(async (request, info) => {
       }
 
       const profile = await response.json();
+      const unlockedItems = profile.profile.server.unlocks.all
+        ? Object.entries(profile.profile.server.unlocks.all)
+          .map(
+            ([item, unlocked]) => unlocked ? item : null,
+          ).filter((item): item is string => item !== null)
+        : [];
+
       let status = UnlockStatus.Corrupted;
-      if (profile.profile.server.unlocks.all === undefined) {
+      if (unlockedItems.length === 0) {
         status = UnlockStatus.Locked;
       } else if (
-        items.every((
-          item,
-        ) => (item in profile.profile.server.unlocks.all &&
-          profile.profile.server.unlocks.all[item] === true)
-        ) && Object.keys(profile.profile.server.unlocks.all).length ===
-          items.length
-      ) status = UnlockStatus.Unlocked;
+        unlockedItems.length === itemsToUnlock.length &&
+        itemsToUnlock.every((item) => unlockedItems.includes(item))
+      ) {
+        status = UnlockStatus.Unlocked;
+      }
 
       return new Response(status, {
         status: 200,
@@ -129,7 +134,7 @@ Deno.serve(async (request, info) => {
             profile: {
               server: {
                 unlocks: {
-                  all: items.reduce((acc, item) => {
+                  all: itemsToUnlock.reduce((acc, item) => {
                     acc[item] = true;
                     return acc;
                   }, {} as Record<string, boolean>),

@@ -4,11 +4,16 @@ const item_assignment: ItemAssignment = JSON.parse(
   await Deno.readTextFile("./item_assignment.json"),
 );
 
-let items: string[] = [];
+const items = new Set<string>();
 for (const item1 of Object.values(item_assignment)) {
   for (const item2 of Object.values(item1)) {
-    items = items.concat(item2);
+    for (const item3 of item2) {
+      items.add(item3);
+    }
   }
 }
 
-await Deno.writeTextFile("./items.json", JSON.stringify(items, null, 2));
+await Deno.writeTextFile(
+  "./items.json",
+  JSON.stringify(Array.from(items), null, 2),
+);

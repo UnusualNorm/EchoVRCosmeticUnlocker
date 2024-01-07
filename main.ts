@@ -42,8 +42,13 @@ Deno.serve(async (request, info) => {
   const ip = info.remoteAddr.hostname;
   const url = new URL(request.url);
 
-  const log = (status: number, message: string, comment?: string) =>
-    console.log(
+  const log = (
+    level: "debug" | "info" | "warn" | "error",
+    status: number,
+    message: string,
+    comment?: string,
+  ) =>
+    console[level](
       `${ip} ${request.method} ${url.pathname} ${status} \"${message}\"${
         comment ? ` \"${comment}\"` : ""
       }`,
@@ -53,6 +58,7 @@ Deno.serve(async (request, info) => {
   const now = Date.now();
   if (now - lastRequest < rateLimit) {
     log(
+      "warn",
       429,
       "Rate limit exceeded",
       String(lastRequest),
@@ -71,7 +77,7 @@ Deno.serve(async (request, info) => {
 
   const xPlatformId = url.pathname.slice(1);
   if (!isXPlatformId(xPlatformId)) {
-    log(400, "Invalid XPlatformId");
+    log("warn", 400, "Invalid XPlatformId");
     return new Response("Invalid XPlatformId", {
       status: 400,
       headers: {
@@ -92,7 +98,7 @@ Deno.serve(async (request, info) => {
       );
 
       if (response.status === 404) {
-        log(404, "Not found", await response.text());
+        log("warn", 404, "Not found", await response.text());
         return new Response("Not found", {
           status: 404,
           headers: {
@@ -102,7 +108,7 @@ Deno.serve(async (request, info) => {
       }
 
       if (!response.ok) {
-        log(500, "Internal server error", await response.text());
+        log("error", 500, "Internal server error", await response.text());
         return new Response("Internal server error", {
           status: 500,
           headers: {
@@ -129,7 +135,7 @@ Deno.serve(async (request, info) => {
         status = UnlockStatus.Unlocked;
       }
 
-      log(200, status);
+      log("info", 200, status);
       return new Response(status, {
         status: 200,
         headers: {
@@ -161,7 +167,7 @@ Deno.serve(async (request, info) => {
       );
 
       if (response.status === 404) {
-        log(404, "Not found", await response.text());
+        log("warn", 404, "Not found", await response.text());
         return new Response("Not found", {
           status: 404,
           headers: {
@@ -171,7 +177,7 @@ Deno.serve(async (request, info) => {
       }
 
       if (!response.ok) {
-        log(500, "Internal server error", await response.text());
+        log("error", 500, "Internal server error", await response.text());
         return new Response("Internal server error", {
           status: 500,
           headers: {
@@ -180,7 +186,7 @@ Deno.serve(async (request, info) => {
         });
       }
 
-      log(200, "OK");
+      log("info", 200, "OK");
       return new Response("OK", {
         status: 200,
         headers: {
